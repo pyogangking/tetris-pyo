@@ -20,7 +20,7 @@ export const TETROMINOS: Record<TetrominoType, Tetromino> = {
       [0, 0, 0, 0],
       [0, 0, 0, 0],
     ],
-    color: 'bg-cyan-400',
+    color: 'bg-[#00E5FF] shadow-[0_0_15px_rgba(0,229,255,0.6)]',
     type: 'I',
   },
   J: {
@@ -29,7 +29,7 @@ export const TETROMINOS: Record<TetrominoType, Tetromino> = {
       [1, 1, 1],
       [0, 0, 0],
     ],
-    color: 'bg-blue-500',
+    color: 'bg-[#7000FF] shadow-[0_0_15px_rgba(112,0,255,0.6)]',
     type: 'J',
   },
   L: {
@@ -38,7 +38,7 @@ export const TETROMINOS: Record<TetrominoType, Tetromino> = {
       [1, 1, 1],
       [0, 0, 0],
     ],
-    color: 'bg-orange-500',
+    color: 'bg-[#FF007F] shadow-[0_0_15px_rgba(255,0,127,0.6)]',
     type: 'L',
   },
   O: {
@@ -46,7 +46,7 @@ export const TETROMINOS: Record<TetrominoType, Tetromino> = {
       [1, 1],
       [1, 1],
     ],
-    color: 'bg-yellow-400',
+    color: 'bg-[#FFFB00] shadow-[0_0_15px_rgba(255,251,0,0.6)]',
     type: 'O',
   },
   S: {
@@ -55,7 +55,7 @@ export const TETROMINOS: Record<TetrominoType, Tetromino> = {
       [1, 1, 0],
       [0, 0, 0],
     ],
-    color: 'bg-green-500',
+    color: 'bg-[#00FF66] shadow-[0_0_15px_rgba(0,255,102,0.6)]',
     type: 'S',
   },
   T: {
@@ -64,7 +64,7 @@ export const TETROMINOS: Record<TetrominoType, Tetromino> = {
       [1, 1, 1],
       [0, 0, 0],
     ],
-    color: 'bg-purple-500',
+    color: 'bg-[#FF00FF] shadow-[0_0_15px_rgba(255,0,255,0.6)]',
     type: 'T',
   },
   Z: {
@@ -73,15 +73,18 @@ export const TETROMINOS: Record<TetrominoType, Tetromino> = {
       [0, 1, 1],
       [0, 0, 0],
     ],
-    color: 'bg-red-500',
+    color: 'bg-[#FF3333] shadow-[0_0_15px_rgba(255,51,51,0.6)]',
     type: 'Z',
   },
 };
 
 export const COLORS = {
-  empty: 'bg-zinc-900',
-  border: 'border-zinc-700',
-  grid: 'bg-zinc-800/50',
+  empty: 'bg-[#0A0A0F]',
+  border: 'border-[#FF007F]/30',
+  grid: 'bg-[#0A0A0F]/50',
+  primary: '#FF007F',
+  secondary: '#00E5FF',
+  tertiary: '#7000FF',
 };
 
 export const SCORES = {

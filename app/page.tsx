@@ -2,29 +2,25 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTetris } from './useTetris';
-import { TETROMINOS, COLS, ROWS, TetrominoType } from './constants';
+import { TETROMINOS, COLS, ROWS, TetrominoType, COLORS } from './constants';
 
-// Replace with your actual Google Apps Script URL
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyvWj2jK0jH2jK0jH2jK0jH2jK0jH2jK0jH2jK0jH2jK0jH2jK/exec'; // Placeholder
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyvWj2jK0jH2jK0jH2jK0jH2jK0jH2jK0jH2jK0jH2jK0jH2jK/exec'; 
 
 const Block = ({ color, ghost, className }: { color: string; ghost?: boolean; className?: string }) => (
   <div
-    className={`w-full aspect-square border-[1px] border-white/10 rounded-[2px] transition-all duration-100 ${
-      ghost ? `${color} opacity-20 border-dashed` : color
+    className={`w-full aspect-square border-[1px] border-white/5 rounded-[1px] transition-all duration-100 ${
+      ghost ? `${color.split(' ')[0]} opacity-10 border-dashed border-white/20` : color
     } ${className}`}
-    style={{
-      boxShadow: !ghost ? 'inset 0 0 8px rgba(255,255,255,0.2)' : 'none',
-    }}
   />
 );
 
-const PreviewPiece = ({ type }: { type: TetrominoType | null }) => {
-  if (!type) return <div className="grid grid-cols-4 grid-rows-4 gap-1 w-24 h-24" />;
+const PreviewPiece = ({ type, colorClass }: { type: TetrominoType | null, colorClass: string }) => {
+  if (!type) return <div className="grid grid-cols-4 grid-rows-4 gap-[2px] w-20 h-20" />;
   const piece = TETROMINOS[type];
   return (
-    <div className="flex items-center justify-center w-24 h-24 bg-zinc-900/50 rounded-xl border border-white/5 p-2 backdrop-blur-sm">
+    <div className="flex items-center justify-center w-20 h-20">
       <div 
-        className="grid gap-1"
+        className="grid gap-[2px]"
         style={{ 
           gridTemplateColumns: `repeat(${piece.shape[0].length}, 1fr)`,
         }}
@@ -32,7 +28,9 @@ const PreviewPiece = ({ type }: { type: TetrominoType | null }) => {
         {piece.shape.map((row, y) =>
           row.map((cell, x) => (
             <div key={`${y}-${x}`} className="w-4 h-4">
-              {cell !== 0 && <Block color={piece.color} />}
+              {cell !== 0 && (
+                <div className={`w-full h-full rounded-[1px] ${colorClass}`} />
+              )}
             </div>
           ))
         )}
@@ -51,6 +49,15 @@ interface LeaderboardEntry {
   name: string;
   time: number;
 }
+
+const CyberBox = ({ title, children, colorClass = 'border-[#00E5FF]' }: { title: string; children: React.ReactNode; colorClass?: string }) => (
+  <div className={`relative p-4 bg-black/40 border-l-2 ${colorClass} backdrop-blur-sm shadow-[0_0_20px_rgba(0,0,0,0.3)]`}>
+    <div className="absolute top-0 left-0 bg-black px-2 py-[2px] -translate-y-1/2 text-[10px] font-black tracking-widest text-zinc-500 uppercase">
+      {title}
+    </div>
+    {children}
+  </div>
+);
 
 export default function TetrisGame() {
   const [userName, setUserName] = useState('');
@@ -84,10 +91,7 @@ export default function TetrisGame() {
   const isUrlConfigured = GAS_URL && !GAS_URL.includes('AKfycbyvWj2jK');
 
   const fetchLeaderboard = useCallback(async () => {
-    if (!isUrlConfigured) {
-      console.warn('Leaderboard GAS_URL is not configured. Skipping fetch.');
-      return;
-    }
+    if (!isUrlConfigured) return;
     try {
       const response = await fetch(GAS_URL);
       const data = await response.json();
@@ -130,41 +134,22 @@ export default function TetrisGame() {
         if (e.key === 'Enter' && userName.trim()) startGame();
         return;
       }
-
       if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
         togglePause();
         return;
       }
-
       if (e.key === 'r' || e.key === 'R') {
         startGame();
         return;
       }
-
       if (gameState !== 'playing') return;
-
       switch (e.key) {
-        case 'ArrowLeft':
-          moveLeft();
-          break;
-        case 'ArrowRight':
-          moveRight();
-          break;
-        case 'ArrowDown':
-          moveDown();
-          break;
-        case 'ArrowUp':
-          rotate();
-          break;
-        case ' ':
-          e.preventDefault();
-          hardDrop();
-          break;
-        case 'c':
-        case 'C':
-        case 'Shift':
-          hold();
-          break;
+        case 'ArrowLeft': moveLeft(); break;
+        case 'ArrowRight': moveRight(); break;
+        case 'ArrowDown': moveDown(); break;
+        case 'ArrowUp': rotate(); break;
+        case ' ': e.preventDefault(); hardDrop(); break;
+        case 'c': case 'C': case 'Shift': hold(); break;
       }
     },
     [gameState, userName, startGame, togglePause, moveLeft, moveRight, moveDown, rotate, hardDrop, hold]
@@ -183,238 +168,245 @@ export default function TetrisGame() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center font-sans overflow-hidden p-4 relative">
+    <div className="min-h-screen bg-[#050508] text-zinc-100 flex flex-col items-center justify-center font-mono overflow-hidden p-4 relative">
       {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#FF007F] to-transparent shadow-[0_0_10px_#FF007F]" />
+        <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#00E5FF] to-transparent shadow-[0_0_10px_#00E5FF]" />
+        <div className="absolute left-0 top-0 h-full w-[1px] bg-gradient-to-b from-transparent via-[#FF007F] to-transparent" />
+        <div className="absolute right-0 top-0 h-full w-[1px] bg-gradient-to-b from-transparent via-[#00E5FF] to-transparent" />
+      </div>
+
+      <div className="absolute top-4 left-6 flex items-center gap-2">
+        <div className="w-3 h-3 bg-[#FF007F] shadow-[0_0_8px_#FF007F] rounded-sm" />
+        <span className="text-sm font-black italic tracking-widest text-[#FF007F]">NEON_TETRIS_V1.0</span>
       </div>
 
       {gameState === 'idle' ? (
-        <div className="z-10 flex flex-col items-center gap-8 p-12 bg-zinc-900/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-500 max-w-md w-full">
+        <div className="z-10 flex flex-col items-center gap-10 p-12 bg-[#0A0A0F]/90 border border-white/5 rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.8)] max-w-md w-full relative">
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-[#FF007F] text-black font-black text-xs tracking-widest">SYSTEM_INIT</div>
+          
           <div className="text-center">
-            <h1 className="text-5xl font-black mb-2 tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-500">TETRIS</h1>
-            <p className="text-zinc-500 text-sm font-medium">Clear 3 lines to win!</p>
+            <h1 className="text-6xl font-black mb-4 tracking-tighter text-[#00E5FF] drop-shadow-[0_0_15px_rgba(0,229,255,0.5)] italic">
+              TETRIS
+            </h1>
+            <p className="text-zinc-500 text-[10px] font-bold tracking-[0.3em] uppercase">3줄을 제거하면 승리합니다!</p>
           </div>
           
-          <div className="w-full flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">Player Name</label>
+          <div className="w-full flex flex-col gap-6">
+            <div className="flex flex-col gap-3">
+              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-1 h-3 bg-[#FF007F]" /> 플레이어 이름
+              </label>
               <input 
                 type="text" 
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
-                placeholder="Enter your name"
-                className="w-full px-6 py-4 bg-black/40 border border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all text-lg font-bold"
+                placeholder="OPERATOR_NAME"
+                className="w-full px-6 py-4 bg-black/60 border border-white/10 rounded-sm focus:outline-none focus:border-[#00E5FF] transition-all text-lg font-bold text-[#00E5FF] placeholder:text-zinc-800"
               />
             </div>
             
             <button 
               onClick={handleStart}
               disabled={!userName.trim()}
-              className="w-full py-5 bg-white text-black font-black rounded-2xl hover:scale-[1.02] transition-transform active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 text-xl"
+              className="w-full py-5 bg-[#FF007F] text-black font-black hover:bg-[#ff1a8c] transition-all active:scale-[0.98] disabled:opacity-30 text-xl tracking-widest flex items-center justify-center gap-3"
             >
-              START MISSION
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              미션 시작
             </button>
           </div>
 
-          <div className="w-full pt-6 border-t border-white/5">
-            <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-4 text-center">Top 3 Records</h3>
+          <div className="w-full border-t border-white/5 pt-6">
+            <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-4 text-center flex items-center justify-center gap-3">
+              <span className="h-[1px] flex-1 bg-white/5" /> 최고 기록 Top 3 <span className="h-[1px] flex-1 bg-white/5" />
+            </h3>
             <div className="flex flex-col gap-2">
               {leaderboard.length > 0 ? (
                 leaderboard.slice(0, 3).map((entry, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                  <div key={i} className="flex items-center justify-between p-3 bg-white/5 border border-white/5">
                     <div className="flex items-center gap-3">
-                      <span className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold ${i === 0 ? 'bg-yellow-500 text-black' : 'bg-zinc-800'}`}>
-                        {i + 1}
-                      </span>
-                      <span className="font-bold text-sm">{entry.name}</span>
+                      <span className={`text-[10px] font-black ${i === 0 ? 'text-[#FFFB00]' : 'text-zinc-500'}`}>0{i + 1}</span>
+                      <span className="font-bold text-sm text-zinc-300">{entry.name}</span>
                     </div>
-                    <span className="font-mono text-cyan-400 font-bold">{formatTime(entry.time)}</span>
+                    <span className="font-mono text-[#00E5FF] font-bold">{formatTime(entry.time)}</span>
                   </div>
                 ))
               ) : (
-                <p className="text-center text-xs text-zinc-600 py-2">No records yet</p>
+                <p className="text-center text-[10px] text-zinc-700 py-2">기록이 없습니다</p>
               )}
             </div>
           </div>
         </div>
       ) : (
-        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start max-w-6xl w-full justify-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-          {/* Left Side: Hold & Timer */}
-          <div className="hidden lg:flex flex-col gap-6 w-32">
-            <div className="p-4 bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl">
-              <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3 text-center">Hold</h3>
-              <div className="flex justify-center"><PreviewPiece type={holdPiece} /></div>
-            </div>
-            <div className="p-4 bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl">
-              <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 text-center">Time</h3>
-              <div className="text-xl font-black font-mono text-center text-white">{formatTime(elapsedTime)}</div>
+        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start max-w-6xl w-full justify-center">
+          {/* Left Side Panels */}
+          <div className="flex flex-col gap-6 w-36">
+            <CyberBox title="저장" colorClass="border-[#FF007F]">
+              <div className="flex justify-center py-2"><PreviewPiece type={holdPiece} colorClass="bg-[#FF007F] shadow-[0_0_10px_#FF007F]" /></div>
+            </CyberBox>
+            <CyberBox title="시간">
+              <div className="text-2xl font-black text-center text-white py-2">{formatTime(elapsedTime)}</div>
+            </CyberBox>
+            
+            {/* Control Tips (Mobile hidden) */}
+            <div className="hidden md:block mt-auto p-4 border border-white/5 bg-black/20">
+              <h4 className="text-[9px] font-black text-zinc-600 mb-3 uppercase">조작법</h4>
+              <div className="flex flex-col gap-2 text-[9px] text-zinc-500">
+                <div className="flex justify-between"><span>이동</span><span>← →</span></div>
+                <div className="flex justify-between"><span>회전</span><span>↑</span></div>
+                <div className="flex justify-between"><span>강제낙하</span><span>SP</span></div>
+              </div>
             </div>
           </div>
 
-          {/* Center: Game Board */}
-          <div className="relative group">
-            <div className="p-2 bg-zinc-900/60 backdrop-blur-xl rounded-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden">
-              <div 
-                className="grid gap-[1px] bg-white/5 border border-white/5"
-                style={{
-                  gridTemplateColumns: `repeat(${COLS}, 1.75rem)`,
-                  gridTemplateRows: `repeat(${ROWS}, 1.75rem)`,
-                }}
-              >
-                {grid.map((row, y) =>
-                  row.map((cell, x) => {
-                    let color = cell;
-                    let isGhost = false;
+          {/* Main Matrix */}
+          <div className="relative">
+            <div className="p-[2px] bg-gradient-to-b from-[#FF007F]/20 to-[#00E5FF]/20 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+              <div className="bg-[#050508] p-1 border border-white/10">
+                <div 
+                  className="grid gap-[1px]"
+                  style={{
+                    gridTemplateColumns: `repeat(${COLS}, 1.6rem)`,
+                    gridTemplateRows: `repeat(${ROWS}, 1.6rem)`,
+                  }}
+                >
+                  {grid.map((row, y) =>
+                    row.map((cell, x) => {
+                      let color = cell;
+                      let isGhost = false;
 
-                    if (currentPiece) {
-                      const py = y - currentPiece.pos.y;
-                      const px = x - currentPiece.pos.x;
-                      if (
-                        py >= 0 && py < currentPiece.shape.length &&
-                        px >= 0 && px < currentPiece.shape[py].length &&
-                        currentPiece.shape[py][px] !== 0
-                      ) {
-                        color = currentPiece.color;
+                      if (currentPiece) {
+                        const py = y - currentPiece.pos.y;
+                        const px = x - currentPiece.pos.x;
+                        if (py >= 0 && py < currentPiece.shape.length && px >= 0 && px < currentPiece.shape[py].length && currentPiece.shape[py][px] !== 0) {
+                          color = currentPiece.color;
+                        }
                       }
-                    }
 
-                    if (!color && ghostPos && currentPiece) {
-                      const py = y - ghostPos.y;
-                      const px = x - ghostPos.x;
-                      if (
-                        py >= 0 && py < currentPiece.shape.length &&
-                        px >= 0 && px < currentPiece.shape[py].length &&
-                        currentPiece.shape[py][px] !== 0
-                      ) {
-                        color = currentPiece.color;
-                        isGhost = true;
+                      if (!color && ghostPos && currentPiece) {
+                        const py = y - ghostPos.y;
+                        const px = x - ghostPos.x;
+                        if (py >= 0 && py < currentPiece.shape.length && px >= 0 && px < currentPiece.shape[py].length && currentPiece.shape[py][px] !== 0) {
+                          color = currentPiece.color;
+                          isGhost = true;
+                        }
                       }
-                    }
 
-                    return (
-                      <div key={`${y}-${x}`} className="w-full h-full bg-zinc-950/30">
-                        {color && <Block color={color} ghost={isGhost} />}
-                      </div>
-                    );
-                  })
-                )}
+                      return (
+                        <div key={`${y}-${x}`} className="w-full h-full bg-[#0A0A0F] border-[0.5px] border-white/5">
+                          {color && <Block color={color} ghost={isGhost} />}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Overlays */}
             {gameState === 'paused' && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm rounded-2xl">
-                <h2 className="text-2xl font-bold mb-6">PAUSED</h2>
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm border border-[#00E5FF]/20">
+                <h2 className="text-3xl font-black mb-8 text-[#00E5FF] italic tracking-widest">일시정지</h2>
                 <button 
                   onClick={togglePause}
-                  className="px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform"
+                  className="px-10 py-3 border border-[#00E5FF] text-[#00E5FF] font-black hover:bg-[#00E5FF] hover:text-black transition-all"
                 >
-                  RESUME
+                  계속하기
                 </button>
               </div>
             )}
 
-            {gameState === 'gameOver' && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-red-950/80 backdrop-blur-md rounded-2xl animate-in zoom-in duration-300">
-                <h2 className="text-3xl font-black mb-2 text-white">MISSION FAILED</h2>
-                <div className="text-xl font-bold mb-6 text-red-200">Blocks reached the top</div>
-                <button 
-                  onClick={startGame}
-                  className="px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform"
-                >
-                  RETRY
-                </button>
-              </div>
-            )}
-
-            {gameState === 'finished' && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-green-950/90 backdrop-blur-md rounded-2xl animate-in zoom-in duration-300 p-8 text-center">
-                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-4 animate-bounce">
-                  <svg className="w-8 h-8 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <h2 className="text-3xl font-black mb-1 text-white uppercase tracking-tighter">Mission Complete</h2>
-                <p className="text-green-300 text-sm mb-6">You've cleared 3 lines!</p>
+            {(gameState === 'gameOver' || gameState === 'finished') && (
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-8 border border-[#FF007F]/40 shadow-[0_0_50px_rgba(255,0,127,0.3)]">
+                <div className="text-[#FF007F] text-[10px] font-black tracking-[0.4em] mb-4 uppercase">SYSTEM_CRITICAL</div>
+                <h2 className={`text-4xl font-black mb-10 italic ${gameState === 'finished' ? 'text-[#00FF66]' : 'text-white'}`}>
+                  {gameState === 'finished' ? '게임 완료' : '게임 종료'}
+                </h2>
                 
-                <div className="bg-black/40 p-6 rounded-2xl border border-white/10 w-full mb-8">
-                  <div className="text-xs font-bold text-zinc-500 uppercase mb-1">Final Time</div>
-                  <div className="text-4xl font-black font-mono text-cyan-400">{formatTime(elapsedTime)}</div>
+                <div className="grid grid-cols-1 gap-4 w-full max-w-xs mb-10">
+                  <div className="p-4 bg-white/5 border-l-2 border-[#00E5FF]">
+                    <div className="text-[10px] text-zinc-500 font-bold mb-1 uppercase">최종 점수</div>
+                    <div className="text-2xl font-black font-mono">{score.toLocaleString()}</div>
+                  </div>
+                  <div className="p-4 bg-white/5 border-l-2 border-[#FF007F]">
+                    <div className="text-[10px] text-zinc-500 font-bold mb-1 uppercase">소요 시간</div>
+                    <div className="text-2xl font-black font-mono text-[#00E5FF]">{formatTime(elapsedTime)}</div>
+                  </div>
+                  <div className="p-4 bg-white/5 border-l-2 border-[#FFFB00]">
+                    <div className="text-[10px] text-zinc-500 font-bold mb-1 uppercase">제거한 줄</div>
+                    <div className="text-2xl font-black font-mono">{lines} / 3</div>
+                  </div>
                 </div>
 
-                <button 
-                  onClick={quitGame}
-                  className="w-full py-4 bg-white text-black font-bold rounded-xl hover:scale-[1.02] transition-transform active:scale-[0.98]"
-                >
-                  MAIN MENU
-                </button>
+                <div className="flex flex-col gap-3 w-full max-w-xs">
+                  <button 
+                    onClick={startGame}
+                    className="w-full py-4 border border-[#00E5FF] text-[#00E5FF] font-black hover:bg-[#00E5FF] hover:text-black transition-all"
+                  >
+                    시스템 재부팅
+                  </button>
+                  <button 
+                    onClick={quitGame}
+                    className="w-full py-4 border border-[#FF007F] text-[#FF007F] font-black hover:bg-[#FF007F] hover:text-black transition-all"
+                  >
+                    코어로 복귀
+                  </button>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Right Side: Stats & Controls */}
-          <div className="flex flex-col gap-6 w-full md:w-48">
-            <div className="p-6 bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl">
-              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">Player</h3>
-              <div className="text-xl font-black truncate text-purple-400">{userName || 'Anonymous'}</div>
-            </div>
+          {/* Right Side Panels */}
+          <div className="flex flex-col gap-6 w-48">
+            <CyberBox title="플레이어" colorClass="border-[#7000FF]">
+              <div className="text-lg font-black truncate text-[#7000FF] py-1">{userName || 'OPERATOR'}</div>
+            </CyberBox>
 
-            <div className="p-6 bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl flex flex-col gap-6">
-              <div>
-                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Progress (Lines)</div>
-                <div className="flex items-end gap-2">
-                  <div className="text-3xl font-black font-mono text-cyan-400">{lines}</div>
-                  <div className="text-sm text-zinc-500 mb-1">/ 3</div>
-                </div>
-                <div className="w-full h-1 bg-zinc-800 rounded-full mt-2 overflow-hidden">
-                  <div 
-                    className="h-full bg-cyan-500 transition-all duration-500"
-                    style={{ width: `${(lines / 3) * 100}%` }}
-                  />
-                </div>
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Next Piece</div>
-                <div className="flex justify-center mt-2">
-                  <PreviewPiece type={nextPiece} />
-                </div>
-              </div>
-            </div>
+            <CyberBox title="점수" colorClass="border-[#FFFB00]">
+              <div className="text-2xl font-black font-mono text-center text-[#FFFB00] py-1">{score.toLocaleString()}</div>
+            </CyberBox>
 
-            <div className="flex flex-col gap-2">
-              <button 
-                onClick={togglePause}
-                className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl font-bold text-sm transition-colors border border-white/5"
-              >
-                {gameState === 'playing' ? 'Pause (P)' : 'Resume'}
+            <CyberBox title="진행 상황">
+              <div className="flex items-end justify-between mb-2">
+                <span className="text-[10px] font-black text-zinc-500">진행도</span>
+                <span className="text-sm font-black text-[#00E5FF]">{lines} / 3</span>
+              </div>
+              <div className="w-full h-2 bg-black/60 rounded-full overflow-hidden border border-white/5">
+                <div 
+                  className="h-full bg-gradient-to-r from-[#FF007F] to-[#00E5FF] transition-all duration-700 shadow-[0_0_8px_rgba(0,229,255,0.5)]"
+                  style={{ width: `${(lines / 3) * 100}%` }}
+                />
+              </div>
+            </CyberBox>
+
+            <CyberBox title="다음">
+              <div className="flex justify-center py-2"><PreviewPiece type={nextPiece} colorClass="bg-[#00E5FF] shadow-[0_0_10px_#00E5FF]" /></div>
+            </CyberBox>
+
+            <div className="flex flex-col gap-2 mt-2">
+              <button onClick={togglePause} className="w-full py-3 bg-white/5 hover:bg-white/10 text-xs font-black tracking-widest border border-white/10 transition-all uppercase">
+                {gameState === 'playing' ? '일시정지 (P)' : '계속하기'}
               </button>
-              <button 
-                onClick={startGame}
-                className="w-full py-3 bg-zinc-900/50 hover:bg-zinc-800 rounded-xl font-bold text-sm transition-colors border border-white/5"
-              >
-                Restart (R)
+              <button onClick={startGame} className="w-full py-3 bg-white/5 hover:bg-white/10 text-xs font-black tracking-widest border border-white/10 transition-all uppercase">
+                다시 시작 (R)
               </button>
-              <button 
-                onClick={quitGame}
-                className="w-full py-3 bg-zinc-900/50 hover:bg-red-900/20 rounded-xl font-bold text-sm transition-colors border border-white/5 text-zinc-500 hover:text-red-400"
-              >
-                Quit Game
+              <button onClick={quitGame} className="w-full py-3 bg-[#FF007F]/10 hover:bg-[#FF007F]/20 text-[#FF007F] text-xs font-black tracking-widest border border-[#FF007F]/20 transition-all uppercase">
+                게임 종료
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Global Footer */}
-      <footer className="mt-12 text-center z-10 animate-in fade-in duration-1000 delay-500">
+      {/* Footer Info */}
+      <footer className="mt-12 text-center z-10 opacity-50">
         <div className="flex flex-col gap-1 items-center">
-          <p className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em]">AI코딩을활용한창의적인앱개발</p>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-zinc-400">도시공학과</span>
-            <span className="w-1 h-1 bg-zinc-800 rounded-full" />
-            <span className="text-xs font-bold text-zinc-400 tracking-widest">표강현</span>
+          <p className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em]">AI코딩을활용한창의적인앱개발</p>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-bold text-zinc-500">도시공학과</span>
+            <div className="w-1 h-1 bg-[#FF007F] rounded-full" />
+            <span className="text-[10px] font-bold text-zinc-500 tracking-[0.2em]">표강현</span>
           </div>
         </div>
       </footer>
