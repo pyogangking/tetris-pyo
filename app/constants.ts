@@ -88,8 +88,8 @@ export const COLORS = {
 };
 
 export const SCORES = {
-  SINGLE: 100,
-  DOUBLE: 300,
-  TRIPLE: 500,
-  TETRIS: 800,
+  SINGLE: 1,
+  DOUBLE: 2,
+  TRIPLE: 3,
+  TETRIS: 4,
 };

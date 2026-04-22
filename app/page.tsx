@@ -64,6 +64,7 @@ export default function TetrisGame() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const {
     grid,
@@ -85,19 +86,21 @@ export default function TetrisGame() {
     hardDrop,
     rotate,
     hold,
-    setGameState,
   } = useTetris();
 
-  const isUrlConfigured = GAS_URL && !GAS_URL.includes('AKfycbyvWj2jK');
+  // URL 유효성 검사 강화
+  const isUrlConfigured = GAS_URL && GAS_URL.startsWith('http') && !GAS_URL.includes('AKfycbyvWj2jK');
 
   const fetchLeaderboard = useCallback(async () => {
     if (!isUrlConfigured) return;
     try {
-      const response = await fetch(GAS_URL);
-      const data = await response.json();
-      setLeaderboard(Array.isArray(data) ? data : []);
+      const response = await fetch(GAS_URL, { cache: 'no-store' });
+      if (response.ok) {
+        const data = await response.json();
+        setLeaderboard(Array.isArray(data) ? data : []);
+      }
     } catch (error) {
-      console.error('Failed to fetch leaderboard:', error);
+      console.warn('리더보드 데이터를 가져오는데 실패했습니다. URL 또는 네트워크 설정을 확인하세요.');
     }
   }, [isUrlConfigured]);
 
@@ -105,18 +108,27 @@ export default function TetrisGame() {
     if (isSaved || !userName || !isUrlConfigured) return;
     setIsLoading(true);
     try {
+      // GAS POST 요청의 CORS 이슈를 피하기 위해 no-cors 모드를 사용하거나 
+      // 리다이렉트를 허용합니다.
       await fetch(GAS_URL, {
         method: 'POST',
+        mode: 'no-cors', 
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ name: userName, time: elapsedTime }),
       });
       setIsSaved(true);
-      fetchLeaderboard();
+      setTimeout(fetchLeaderboard, 1500);
     } catch (error) {
-      console.error('Failed to save score:', error);
+      console.error('점수 저장 실패:', error);
     } finally {
       setIsLoading(false);
     }
   }, [userName, elapsedTime, isSaved, fetchLeaderboard, isUrlConfigured]);
+
+  useEffect(() => {
+    setIsMounted(true);
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
 
   useEffect(() => {
     if (gameState === 'finished') {
@@ -124,14 +136,10 @@ export default function TetrisGame() {
     }
   }, [gameState, saveScore]);
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [fetchLeaderboard]);
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (gameState === 'idle' || gameState === 'gameOver' || gameState === 'finished') {
-        if (e.key === 'Enter' && userName.trim()) startGame();
+        if (e.key === 'Enter' && userName.trim()) handleStart();
         return;
       }
       if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
@@ -166,6 +174,9 @@ export default function TetrisGame() {
       startGame();
     }
   };
+
+  // Hydration 오류 방지: 마운트 전에는 빈 화면 또는 스켈레톤 출력
+  if (!isMounted) return <div className="min-h-screen bg-[#050508]" />;
 
   return (
     <div className="min-h-screen bg-[#050508] text-zinc-100 flex flex-col items-center justify-center font-mono overflow-hidden p-4 relative">
@@ -233,7 +244,7 @@ export default function TetrisGame() {
                   </div>
                 ))
               ) : (
-                <p className="text-center text-[10px] text-zinc-700 py-2">기록이 없습니다</p>
+                <p className="text-center text-[10px] text-zinc-700 py-2 italic opacity-50">기록 로딩 중...</p>
               )}
             </div>
           </div>

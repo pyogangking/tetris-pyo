@@ -22,10 +22,12 @@ export const useTetris = () => {
     Array.from({ length: ROWS }, () => Array(COLS).fill(null))
   );
   const [currentPiece, setCurrentPiece] = useState<Piece | null>(null);
-  const [nextPiece, setNextPiece] = useState<TetrominoType>(() => {
+  const [nextPiece, setNextPiece] = useState<TetrominoType | null>(null);
+  
+  useEffect(() => {
     const types = Object.keys(TETROMINOS) as TetrominoType[];
-    return types[Math.floor(Math.random() * types.length)];
-  });
+    setNextPiece(types[Math.floor(Math.random() * types.length)]);
+  }, []);
   const [holdPiece, setHoldPiece] = useState<TetrominoType | null>(null);
   const [canHold, setCanHold] = useState(true);
   const [score, setScore] = useState(0);
@@ -143,7 +145,7 @@ export const useTetris = () => {
           3: SCORES.TRIPLE,
           4: SCORES.TETRIS,
         };
-        setScore((prev) => prev + (scoreTable[linesCleared] || 0) * level);
+        setScore((prev) => prev + (scoreTable[linesCleared] || 0));
         setLines((prev) => {
           const newTotalLines = prev + linesCleared;
           if (newTotalLines >= 3) {
@@ -208,7 +210,7 @@ export const useTetris = () => {
           3: SCORES.TRIPLE,
           4: SCORES.TETRIS,
         };
-        setScore((prev) => prev + (scoreTable[linesCleared] || 0) * level);
+        setScore((prev) => prev + (scoreTable[linesCleared] || 0));
         setLines((prev) => {
           const newTotalLines = prev + linesCleared;
           if (newTotalLines >= 3) {
