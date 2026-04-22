@@ -243,7 +243,12 @@ export default function TetrisGame() {
           {/* Left Side Panels */}
           <div className="flex flex-col gap-6 w-36">
             <CyberBox title="저장" colorClass="border-[#FF007F]">
-              <div className="flex justify-center py-2"><PreviewPiece type={holdPiece} colorClass="bg-[#FF007F] shadow-[0_0_10px_#FF007F]" /></div>
+              <div className="flex justify-center py-2">
+                <PreviewPiece 
+                  type={holdPiece} 
+                  colorClass={holdPiece ? TETROMINOS[holdPiece].color : ''} 
+                />
+              </div>
             </CyberBox>
             <CyberBox title="시간">
               <div className="text-2xl font-black text-center text-white py-2">{formatTime(elapsedTime)}</div>
@@ -318,39 +323,65 @@ export default function TetrisGame() {
             )}
 
             {(gameState === 'gameOver' || gameState === 'finished') && (
-              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-8 border border-[#FF007F]/40 shadow-[0_0_50px_rgba(255,0,127,0.3)]">
-                <div className="text-[#FF007F] text-[10px] font-black tracking-[0.4em] mb-4 uppercase">SYSTEM_CRITICAL</div>
-                <h2 className={`text-4xl font-black mb-10 italic ${gameState === 'finished' ? 'text-[#00FF66]' : 'text-white'}`}>
-                  {gameState === 'finished' ? '게임 완료' : '게임 종료'}
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md p-4 border border-[#FF007F]/40 shadow-[0_0_50px_rgba(255,0,127,0.3)] overflow-y-auto">
+                <div className="text-[#FF007F] text-[9px] font-black tracking-[0.4em] mb-2 uppercase animate-pulse">SYSTEM_CRITICAL</div>
+                <h2 className={`text-3xl font-black mb-6 italic ${gameState === 'finished' ? 'text-[#00FF66]' : 'text-white'}`}>
+                  {gameState === 'finished' ? '미션 성공' : '미션 실패'}
                 </h2>
                 
-                <div className="grid grid-cols-1 gap-4 w-full max-w-xs mb-10">
-                  <div className="p-4 bg-white/5 border-l-2 border-[#00E5FF]">
-                    <div className="text-[10px] text-zinc-500 font-bold mb-1 uppercase">최종 점수</div>
-                    <div className="text-2xl font-black font-mono">{score.toLocaleString()}</div>
+                <div className="grid grid-cols-2 gap-3 w-full max-w-sm mb-6">
+                  <div className="p-3 bg-white/5 border-l-2 border-[#00E5FF]">
+                    <div className="text-[9px] text-zinc-500 font-bold mb-1 uppercase">점수</div>
+                    <div className="text-xl font-black font-mono">{score.toLocaleString()}</div>
                   </div>
-                  <div className="p-4 bg-white/5 border-l-2 border-[#FF007F]">
-                    <div className="text-[10px] text-zinc-500 font-bold mb-1 uppercase">소요 시간</div>
-                    <div className="text-2xl font-black font-mono text-[#00E5FF]">{formatTime(elapsedTime)}</div>
+                  <div className="p-3 bg-white/5 border-l-2 border-[#FF007F]">
+                    <div className="text-[9px] text-zinc-500 font-bold mb-1 uppercase">시간</div>
+                    <div className="text-xl font-black font-mono text-[#00E5FF]">{formatTime(elapsedTime)}</div>
                   </div>
-                  <div className="p-4 bg-white/5 border-l-2 border-[#FFFB00]">
-                    <div className="text-[10px] text-zinc-500 font-bold mb-1 uppercase">제거한 줄</div>
-                    <div className="text-2xl font-black font-mono">{lines} / 3</div>
+                  <div className="p-3 bg-white/5 border-l-2 border-[#FFFB00] col-span-2">
+                    <div className="text-[9px] text-zinc-500 font-bold mb-1 uppercase">라인 제거</div>
+                    <div className="text-xl font-black font-mono flex items-center justify-between">
+                      <span>{lines} / 3</span>
+                      <div className="w-24 h-1 bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#FFFB00]" style={{ width: `${Math.min(100, (lines/3)*100)}%` }} />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3 w-full max-w-xs">
+                <div className="w-full max-w-sm border-t border-white/10 pt-4 mb-6">
+                  <h3 className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <span className="w-1 h-1 bg-[#00E5FF] rounded-full" /> 최고 기록 TOP 3
+                  </h3>
+                  <div className="flex flex-col gap-1.5">
+                    {leaderboard.length > 0 ? (
+                      leaderboard.slice(0, 3).map((entry, i) => (
+                        <div key={i} className="flex items-center justify-between p-2 bg-white/5 border border-white/5 rounded-sm">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[9px] font-black ${i === 0 ? 'text-[#FFFB00]' : 'text-zinc-500'}`}>0{i + 1}</span>
+                            <span className="font-bold text-xs text-zinc-300 truncate max-w-[100px]">{entry.name}</span>
+                          </div>
+                          <span className="font-mono text-[#00E5FF] font-bold text-xs">{formatTime(entry.time)}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[9px] text-zinc-600 text-center py-2 italic">기록 동기화 중...</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
                   <button 
                     onClick={startGame}
-                    className="w-full py-4 border border-[#00E5FF] text-[#00E5FF] font-black hover:bg-[#00E5FF] hover:text-black transition-all"
+                    className="py-3 border border-[#00E5FF] text-[#00E5FF] text-[11px] font-black hover:bg-[#00E5FF] hover:text-black transition-all tracking-tighter"
                   >
-                    시스템 재부팅
+                    시스템 재시작
                   </button>
                   <button 
                     onClick={quitGame}
-                    className="w-full py-4 border border-[#FF007F] text-[#FF007F] font-black hover:bg-[#FF007F] hover:text-black transition-all"
+                    className="py-3 border border-[#FF007F] text-[#FF007F] text-[11px] font-black hover:bg-[#FF007F] hover:text-black transition-all tracking-tighter"
                   >
-                    코어로 복귀
+                    처음으로
                   </button>
                 </div>
               </div>
@@ -381,7 +412,12 @@ export default function TetrisGame() {
             </CyberBox>
 
             <CyberBox title="다음">
-              <div className="flex justify-center py-2"><PreviewPiece type={nextPiece} colorClass="bg-[#00E5FF] shadow-[0_0_10px_#00E5FF]" /></div>
+              <div className="flex justify-center py-2">
+                <PreviewPiece 
+                  type={nextPiece} 
+                  colorClass={nextPiece ? TETROMINOS[nextPiece].color : ''} 
+                />
+              </div>
             </CyberBox>
 
             <div className="flex flex-col gap-2 mt-2">

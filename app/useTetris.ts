@@ -211,6 +211,9 @@ export const useTetris = () => {
         setScore((prev) => prev + (scoreTable[linesCleared] || 0) * level);
         setLines((prev) => {
           const newTotalLines = prev + linesCleared;
+          if (newTotalLines >= 3) {
+            setGameState('finished');
+          }
           setLevel(Math.floor(newTotalLines / 10) + 1);
           return newTotalLines;
         });
