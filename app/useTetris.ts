@@ -31,9 +31,11 @@ export const useTetris = () => {
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [lines, setLines] = useState(0);
-  const [gameState, setGameState] = useState<'idle' | 'playing' | 'paused' | 'gameOver'>('idle');
+  const [gameState, setGameState] = useState<'idle' | 'playing' | 'paused' | 'gameOver' | 'finished'>('idle');
+  const [elapsedTime, setElapsedTime] = useState(0);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const gameTimerRef = useRef<NodeJS.Timeout | null>(null);
   const speed = Math.max(MIN_DROP_SPEED, INITIAL_DROP_SPEED - (level - 1) * SPEED_INCREMENT);
 
   const getRandomType = useCallback(() => {
@@ -144,6 +146,9 @@ export const useTetris = () => {
         setScore((prev) => prev + (scoreTable[linesCleared] || 0) * level);
         setLines((prev) => {
           const newTotalLines = prev + linesCleared;
+          if (newTotalLines >= 3) {
+            setGameState('finished');
+          }
           setLevel(Math.floor(newTotalLines / 10) + 1);
           return newTotalLines;
         });
@@ -242,6 +247,7 @@ export const useTetris = () => {
     setScore(0);
     setLevel(1);
     setLines(0);
+    setElapsedTime(0);
     setHoldPiece(null);
     setGameState('playing');
     setNextPiece(getRandomType());
@@ -256,6 +262,10 @@ export const useTetris = () => {
     });
   }, [getRandomType]);
 
+  const quitGame = useCallback(() => {
+    setGameState('idle');
+  }, []);
+
   const togglePause = useCallback(() => {
     if (gameState === 'playing') setGameState('paused');
     else if (gameState === 'paused') setGameState('playing');
@@ -264,11 +274,16 @@ export const useTetris = () => {
   useEffect(() => {
     if (gameState === 'playing') {
       timerRef.current = setInterval(drop, speed);
+      gameTimerRef.current = setInterval(() => {
+        setElapsedTime((prev) => prev + 1);
+      }, 1000);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (gameTimerRef.current) clearInterval(gameTimerRef.current);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (gameTimerRef.current) clearInterval(gameTimerRef.current);
     };
   }, [gameState, drop, speed]);
 
@@ -291,9 +306,11 @@ export const useTetris = () => {
     level,
     lines,
     gameState,
+    elapsedTime,
     ghostPos: getGhostPos(),
     startGame,
     togglePause,
+    quitGame,
     moveLeft: () => move(-1, 0),
     moveRight: () => move(1, 0),
     moveDown: drop,
