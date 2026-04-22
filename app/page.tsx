@@ -81,18 +81,24 @@ export default function TetrisGame() {
     setGameState,
   } = useTetris();
 
+  const isUrlConfigured = GAS_URL && !GAS_URL.includes('AKfycbyvWj2jK');
+
   const fetchLeaderboard = useCallback(async () => {
+    if (!isUrlConfigured) {
+      console.warn('Leaderboard GAS_URL is not configured. Skipping fetch.');
+      return;
+    }
     try {
       const response = await fetch(GAS_URL);
       const data = await response.json();
-      setLeaderboard(data);
+      setLeaderboard(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to fetch leaderboard:', error);
     }
-  }, []);
+  }, [isUrlConfigured]);
 
   const saveScore = useCallback(async () => {
-    if (isSaved || !userName) return;
+    if (isSaved || !userName || !isUrlConfigured) return;
     setIsLoading(true);
     try {
       await fetch(GAS_URL, {
@@ -106,7 +112,7 @@ export default function TetrisGame() {
     } finally {
       setIsLoading(false);
     }
-  }, [userName, elapsedTime, isSaved, fetchLeaderboard]);
+  }, [userName, elapsedTime, isSaved, fetchLeaderboard, isUrlConfigured]);
 
   useEffect(() => {
     if (gameState === 'finished') {
