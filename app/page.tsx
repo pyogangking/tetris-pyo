@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTetris } from './useTetris';
 import { TETROMINOS, COLS, ROWS, TetrominoType, COLORS } from './constants';
 
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyvWj2jK0jH2jK0jH2jK0jH2jK0jH2jK0jH2jK0jH2jK0jH2jK/exec'; 
+const GAS_URL = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || ''; 
 
 const Block = ({ color, ghost, className }: { color: string; ghost?: boolean; className?: string }) => (
   <div

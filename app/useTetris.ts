@@ -274,9 +274,14 @@ export const useTetris = () => {
     else if (gameState === 'paused') setGameState('playing');
   }, [gameState]);
 
+  const dropRef = useRef(drop);
+  useEffect(() => {
+    dropRef.current = drop;
+  }, [drop]);
+
   useEffect(() => {
     if (gameState === 'playing') {
-      timerRef.current = setInterval(drop, speed);
+      timerRef.current = setInterval(() => dropRef.current(), speed);
       gameTimerRef.current = setInterval(() => {
         setElapsedTime((prev) => prev + 1);
       }, 1000);
@@ -288,7 +293,7 @@ export const useTetris = () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (gameTimerRef.current) clearInterval(gameTimerRef.current);
     };
-  }, [gameState, drop, speed]);
+  }, [gameState, speed]);
 
   // Ghost block calculation
   const getGhostPos = () => {
